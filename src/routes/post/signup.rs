@@ -1,7 +1,7 @@
 use rocket::http::Status;
 use rocket::serde::json::Json;
 
-use mutual_types::User;
+use afterburn_types::User;
 
 use crate::database;
 

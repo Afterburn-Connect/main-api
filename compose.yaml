@@ -1,0 +1,15 @@
+name: afterburn
+services:
+  surrealdb:
+    container_name: surrealdb
+    ports:
+      - 9000:8000
+    volumes:
+      - C:\Users\recor\Documents\Code\Other\Afterburn\main-api\database.db:/data
+    image: surrealdb/surrealdb:latest
+    command: start --log trace --user root --pass root file:/data/mydatabase.db
+  redis:
+    container_name: redisdb
+    ports:
+      - 6379:6379
+    image: redis

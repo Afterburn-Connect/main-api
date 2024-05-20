@@ -3,54 +3,53 @@ extern crate pretty_env_logger;
 #[macro_use]
 extern crate rocket;
 
-use which::which;
+use std::process::exit;
+
+use port_scanner::scan_port_addr;
+use rocket::http::Method;
 
 use crate::config::get_config;
 use crate::routes::{get, post};
+use redis::Client;
+
+use rocket_cors::{AllowedHeaders, AllowedOrigins};
 
 mod config;
 pub mod database;
 pub mod routes;
 
 pub struct AppState {
-    pub message_recv: crossbeam_channel::Receiver<String>,
-    pub message_send: crossbeam_channel::Sender<String>,
+    pub redis_client: Client,
 }
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() {
-    let (s, r) = crossbeam_channel::unbounded();
     let app_state = AppState {
-        message_recv: r,
-        message_send: s,
+        redis_client: Client::open(get_config().redis_url).unwrap(),
     };
-    pretty_env_logger::env_logger::Builder::from_default_env()
-        .filter_module("backend", log::LevelFilter::Trace)
-        .init();
 
-    match which("surreal") {
-        Ok(_) => {}
-        Err(_) => {
-            println!("Please install surrealdb");
-            std::process::exit(1);
-        }
+    let allowed_origins = AllowedOrigins::all();
+
+    let cors = rocket_cors::CorsOptions {
+        allowed_origins,
+        allowed_headers: AllowedHeaders::all(),
+        allowed_methods: vec![Method::Post, Method::Get]
+            .into_iter()
+            .map(From::from)
+            .collect(),
+        ..Default::default()
     }
+    .to_cors()
+    .unwrap();
 
-    tokio::spawn(async {
-        std::process::Command::new("surreal")
-            .arg("start")
-            .arg("file:database.db")
-            .arg("--auth")
-            .arg("--user")
-            .arg(get_config().surreal_username)
-            .arg("--pass")
-            .arg(get_config().surreal_password)
-            .arg("--bind")
-            .arg("0.0.0.0:9000")
-            .spawn()
-            .unwrap()
-            .wait()
-    });
+    if !scan_port_addr(get_config().surreal_host) {
+        eprintln!("Please start SurrealDB with the docker compose file");
+        exit(1);
+    }
+    if !scan_port_addr(get_config().redis_host) {
+        eprintln!("Please start Redis with the docker compose file");
+        exit(1);
+    }
     rocket::build()
         .manage(app_state)
         .mount(
@@ -59,10 +58,11 @@ async fn main() {
                 post::login::login,
                 post::signup::signup,
                 post::message::message,
-                get::message_stream::message_stream,
                 get::status::status,
+                get::messages::messages_since
             ],
         )
+        .attach(cors)
         .ignite()
         .await
         .unwrap()

@@ -6,7 +6,8 @@ pub struct Config {
     pub surreal_username: String,
     pub surreal_password: String,
     pub surreal_host: String,
-    pub nats_host: String,
+    pub redis_host: String,
+    pub redis_url: String,
     pub surreal_db: String,
 }
 

@@ -17,11 +17,16 @@ lazy_static = "1.4.0"
 serde_yaml = "0.9.34"
 surrealdb = { version = "1.3.1", features = ["protocol-http"] }
 uuid = { version = "1.8.0", features = ["v4", "fast-rng"] }
-mutual_types = { path = "../mutual_objects" }
 log = "0.4"
 pretty_env_logger = "0.5.0"
 crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
 crossbeam-channel = "0.5.12"
+redis = "0.25.3"
+sys-info = "0.9.1"
+rocket_cors = "0.6.0"
+afterburn_types = { path = "./src/crates/afterburn_types" }
+port_scanner = "0.1.5"
+chrono = "0.4.38"
 
 [profile.dev]
 debug = 0

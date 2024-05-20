@@ -1,0 +1,11 @@
+[package]
+name = "afterburn_types"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde = { version = "1.0.197", features = ["derive"] }
+sha3 = "0.10.8"
+ts-rs = "8.1"

@@ -1,13 +1,12 @@
-use surrealdb::{Error, Surreal};
 use surrealdb::engine::remote::http::{Client, Http};
 use surrealdb::opt::auth::Root;
+use surrealdb::{Error, Surreal};
 
 use crate::config::get_config;
 
-pub mod users;
 mod channels;
 pub mod messages;
-
+pub mod users;
 
 pub async fn connect() -> Result<Surreal<Client>, Error> {
     let db = Surreal::new::<Http>(get_config().surreal_host.as_str()).await?;
@@ -16,10 +15,13 @@ pub async fn connect() -> Result<Surreal<Client>, Error> {
         username: get_config().surreal_username.as_str(),
         password: get_config().surreal_password.as_str(),
     })
-        .await?;
+    .await?;
 
     // Select a specific namespace / database
-    db.use_ns("debate").use_db(get_config().surreal_db).await?;
+    db.use_ns("afterburn")
+        .use_db(get_config().surreal_db)
+        .await?;
 
     Ok(db)
 }
+

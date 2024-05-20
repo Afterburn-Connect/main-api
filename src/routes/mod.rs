@@ -5,6 +5,6 @@ pub mod post {
 }
 
 pub mod get {
-    pub mod message_stream;
+    pub mod messages;
     pub mod status;
 }

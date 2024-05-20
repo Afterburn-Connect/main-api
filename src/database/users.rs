@@ -1,6 +1,6 @@
 use rand::Rng;
 
-use mutual_types::User;
+use afterburn_types::User;
 
 use crate::database::connect;
 
@@ -119,21 +119,19 @@ pub async fn user_from_session_id(session_id: &str) -> Result<Option<User>, surr
     );
     let conn = connect().await?;
 
-    let query = "SELECT uuid FROM sessions WHERE session_id = $session_id";
+    let query = "SELECT VALUE uuid FROM sessions WHERE session_id = $session_id";
 
-    let mut result = conn
+    let result = conn
         .query(query)
         .bind(("session_id", session_id))
         .await?
-        .take::<Vec<String>>(0)?;
-    if result.len() == 1 {
-        let uuid = result.pop().unwrap();
-        trace!("Session ID {} found: {}", session_id, uuid);
-        user_from_uuid(&uuid).await
-    } else {
-        trace!("Session ID {} not found", session_id);
-        Ok(None)
+        .take::<Option<String>>(0)?;
+    if result.is_none() {
+        return Ok(None);
     }
+    let uuid = result.unwrap();
+    trace!("Session ID {} found: {}", session_id, uuid);
+    user_from_uuid(uuid.as_str()).await
 }
 
 pub async fn user_from_username(username: &str) -> Result<Option<User>, surrealdb::Error> {
@@ -205,14 +203,14 @@ pub async fn validate_session_id(session_id: &str, uuid: String) -> Result<bool,
     let query =
         "SELECT VALUE session_id FROM sessions WHERE session_id = $session_id AND uuid = $uuid";
 
-    let result = conn
+    let result: Option<String> = conn
         .query(query)
         .bind(("session_id", session_id))
         .bind(("uuid", uuid))
         .await?
-        .take::<Vec<String>>(0)?;
+        .take(0)?;
 
-    if result.len() == 1 {
+    if result.is_some() {
         trace!("Session ID {} is valid", session_id);
         Ok(true)
     } else {
@@ -227,13 +225,13 @@ pub async fn session_id_exists(session_id: &str) -> Result<bool, surrealdb::Erro
 
     let query = "SELECT VALUE session_id FROM sessions WHERE session_id = $session_id";
 
-    let result = conn
+    let result: Option<String> = conn
         .query(query)
         .bind(("session_id", session_id))
         .await?
-        .take::<Vec<String>>(0)?;
+        .take(0)?;
 
-    if result.len() == 1 {
+    if result.is_some() {
         trace!("Session ID {} exists", session_id);
         Ok(true)
     } else {
